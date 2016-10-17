@@ -16,6 +16,14 @@ Anywho, since Yahoo still hasn't fixed this I figured I'd demonstrate that this 
 
 Putting aside aside my concerns about the security of its code, I own a Wifi Pineapple Mark V so the instructions assume you're using one as well. All of this could be reasonably adapted to any other router that can run vanilla OpenWRT.
 
+## How does it work?
+
+First, we intercept every plaintext HTTP response and inject an `<iframe>` pointing to `http://spoof.yahoo.com/grabberFrame.html` onto every page. Our device intercepts that request responds with [our own document](grabberFrame.html) that embeds `http://spoof.yahoo.com/MailGrabber.swf`. The request for that `swf` is similarly intercepted and replaced with [our own SWF](MailGrabber.as).
+
+We should now have a document on `spoof.yahoo.com` embedding our own `swf` loaded in the user's browser. The document [asks the `swf` to request the user's YMail page](grabberFrame.html#L7-L14) via Flash's JS<->SWF bridge and the SWF [sends the page's content back to our JS](MailGrabber.as#L26-L48). At this point the content can be leaked to a remote server or something similar, but out demo dumps it onto the page.
+
+This is possible because even though `*.mail.yahoo.com` has an HSTS policy, uses the `Secure` flag on the relevant cookies, and always redirects to `https`, the `crossdomain.xml` policy gives our SWF served over HTTP privileged access to YMail pages served over HTTPS.
+
 ## Configuring
 
 * Make sure your Pineapple is connected to the internet via ethernet or a second wifi radio
